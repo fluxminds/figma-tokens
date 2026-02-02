@@ -1,0 +1,28 @@
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="128" height="128" rx="24" fill="url(#gradient)"/>
+
+  <!-- Token circles representing design tokens -->
+  <circle cx="42" cy="42" r="14" fill="#FFFFFF" fill-opacity="0.9"/>
+  <circle cx="86" cy="42" r="14" fill="#FFFFFF" fill-opacity="0.7"/>
+  <circle cx="42" cy="86" r="14" fill="#FFFFFF" fill-opacity="0.7"/>
+  <circle cx="86" cy="86" r="14" fill="#FFFFFF" fill-opacity="0.9"/>
+
+  <!-- Connecting lines representing token relationships -->
+  <path d="M56 42H72" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-opacity="0.5"/>
+  <path d="M42 56V72" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-opacity="0.5"/>
+  <path d="M86 56V72" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-opacity="0.5"/>
+  <path d="M56 86H72" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-opacity="0.5"/>
+
+  <!-- Center arrows for import/export -->
+  <path d="M64 52V76" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"/>
+  <path d="M56 60L64 52L72 60" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M56 68L64 76L72 68" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <defs>
+    <linearGradient id="gradient" x1="0" y1="0" x2="128" y2="128" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6366F1"/>
+      <stop offset="1" stop-color="#8B5CF6"/>
+    </linearGradient>
+  </defs>
+</svg>
