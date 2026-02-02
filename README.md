@@ -2,6 +2,9 @@
 
 A Figma plugin for importing and exporting [W3C Design Tokens Community Group (DTCG)](https://design-tokens.github.io/community-group/format/) format tokens.
 
+## Demo
+![Demo](demo.png)
+
 ## Features
 
 - **Import** DTCG JSON tokens into Figma Variables and Effect Styles
