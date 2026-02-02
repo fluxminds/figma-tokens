@@ -103,6 +103,37 @@ A Figma plugin for importing and exporting [W3C Design Tokens Community Group (D
 }
 ```
 
+## Using Design Tokens with AI Agents
+
+DTCG design tokens serve as an excellent **single source of truth** for AI coding agents like Claude, Cursor, or GitHub Copilot. By exporting your Figma design system to a `tokens.json` file and including it in your codebase, AI agents can:
+
+- **Generate consistent UI code** that matches your exact design system
+- **Reference correct color values, spacing, and typography** without guessing
+- **Maintain design consistency** across AI-assisted code generation
+- **Reduce back-and-forth** between design and development
+
+### Recommended Workflow
+
+1. Design your tokens in Figma using Variables
+2. Export tokens using this plugin
+3. Save `tokens.json` in your project (e.g., `src/tokens/tokens.json`)
+4. Reference the tokens file when prompting AI agents:
+
+```
+Use the design tokens in src/tokens/tokens.json for all colors and spacing values.
+```
+
+This ensures AI-generated code aligns with your design system from the start.
+
+### Alternative: Figma MCP
+
+You can also use the [Figma MCP server](https://help.figma.com/hc/en-us/articles/32132100833559-Guide-to-the-Figma-MCP-server) to sync Figma variables directly into an AI agent's context. However, exporting to JSON is often preferable because:
+
+- **Cheaper** - No API calls or real-time connections needed
+- **Clearer** - Human-readable format that's easy to inspect and version control
+- **Faster** - Tokens are immediately available without fetching
+- **Portable** - Works with any AI tool, not just MCP-compatible ones
+
 ## Development
 
 ### Scripts
