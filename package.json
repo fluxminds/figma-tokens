@@ -1,0 +1,19 @@
+{
+  "name": "figma-dtcg-token-importer",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "npm run build:code && npm run build:ui",
+    "build:code": "esbuild src/code.ts --bundle --outfile=dist/code.js --target=es2017",
+    "build:ui": "node scripts/build-ui.js",
+    "watch": "npm run build && concurrently \"npm run watch:code\" \"npm run watch:ui\"",
+    "watch:code": "esbuild src/code.ts --bundle --outfile=dist/code.js --target=es2017 --watch",
+    "watch:ui": "node scripts/build-ui.js"
+  },
+  "devDependencies": {
+    "@figma/plugin-typings": "^1.100.0",
+    "concurrently": "^8.2.2",
+    "esbuild": "^0.20.0",
+    "typescript": "^5.3.3"
+  }
+}

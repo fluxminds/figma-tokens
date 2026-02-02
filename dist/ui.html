@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 12px;
+      line-height: 1.5;
+      color: var(--figma-color-text);
+      background-color: var(--figma-color-bg);
+      padding: 16px;
+    }
+    .container { display: flex; flex-direction: column; gap: 16px; height: 100%; }
+    h1 { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+    .description { color: var(--figma-color-text-secondary); margin-bottom: 8px; }
+    .input-section { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+    .input-section label { font-weight: 500; }
+    .textarea-wrapper { flex: 1; display: flex; flex-direction: column; }
+    textarea {
+      flex: 1;
+      width: 100%;
+      min-height: 200px;
+      padding: 12px;
+      border: 1px solid var(--figma-color-border);
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 11px;
+      line-height: 1.5;
+      resize: none;
+      background-color: var(--figma-color-bg-secondary);
+      color: var(--figma-color-text);
+    }
+    textarea:focus {
+      outline: none;
+      border-color: var(--figma-color-border-brand);
+      box-shadow: 0 0 0 1px var(--figma-color-border-brand);
+    }
+    textarea::placeholder { color: var(--figma-color-text-tertiary); }
+    .file-upload { display: flex; align-items: center; gap: 8px; }
+    .file-upload input[type="file"] { display: none; }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.15s ease;
+    }
+    .btn-primary {
+      background-color: var(--figma-color-bg-brand);
+      color: var(--figma-color-text-onbrand);
+    }
+    .btn-primary:hover:not(:disabled) { background-color: var(--figma-color-bg-brand-hover); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-secondary {
+      background-color: var(--figma-color-bg-secondary);
+      color: var(--figma-color-text);
+      border: 1px solid var(--figma-color-border);
+    }
+    .btn-secondary:hover:not(:disabled) { background-color: var(--figma-color-bg-tertiary); }
+    .actions { display: flex; gap: 8px; }
+    .progress-section {
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      padding: 16px;
+      background-color: var(--figma-color-bg-secondary);
+      border-radius: 8px;
+    }
+    .progress-section.visible { display: flex; }
+    .progress-bar {
+      height: 4px;
+      background-color: var(--figma-color-border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background-color: var(--figma-color-bg-brand);
+      transition: width 0.2s ease;
+      width: 0%;
+    }
+    .progress-text { font-size: 11px; color: var(--figma-color-text-secondary); }
+    .result-section {
+      display: none;
+      flex-direction: column;
+      gap: 12px;
+      padding: 16px;
+      background-color: var(--figma-color-bg-secondary);
+      border-radius: 8px;
+    }
+    .result-section.visible { display: flex; }
+    .result-section.success { border-left: 3px solid var(--figma-color-bg-success); }
+    .result-section.error { border-left: 3px solid var(--figma-color-bg-danger); }
+    .result-title { font-weight: 600; font-size: 13px; }
+    .result-section.success .result-title { color: var(--figma-color-text-success); }
+    .result-section.error .result-title { color: var(--figma-color-text-danger); }
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .stats.hidden { display: none; }
+    .stat { text-align: center; }
+    .stat-value { font-size: 24px; font-weight: 700; color: var(--figma-color-text); }
+    .stat-label { font-size: 11px; color: var(--figma-color-text-secondary); }
+    .warnings { margin-top: 8px; }
+    .warnings-title { font-size: 11px; font-weight: 500; color: var(--figma-color-text-warning); margin-bottom: 4px; }
+    .warnings-list { max-height: 100px; overflow-y: auto; font-size: 11px; color: var(--figma-color-text-secondary); }
+    .warnings-list li { margin-left: 16px; margin-bottom: 2px; }
+    .error-message { color: var(--figma-color-text-danger); font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>DTCG Token Importer</h1>
+      <p class="description">Import W3C Design Tokens into Figma Variables and Effect Styles</p>
+    </header>
+    <div class="input-section">
+      <label for="json-input">Paste your tokens JSON:</label>
+      <div class="textarea-wrapper">
+        <textarea id="json-input" placeholder='{"color": {"primary": {"$type": "color", "500": {"$value": "#3B82F6"}}}}'></textarea>
+      </div>
+      <div class="file-upload">
+        <input type="file" id="file-input" accept=".json">
+        <button class="btn btn-secondary" id="upload-btn">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M8 1v10M8 1L4 5M8 1l4 4M2 11v2a2 2 0 002 2h8a2 2 0 002-2v-2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Upload File
+        </button>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn btn-primary" id="import-btn" disabled>Import Tokens</button>
+    </div>
+    <div class="progress-section" id="progress-section">
+      <div class="progress-bar"><div class="progress-bar-fill" id="progress-bar-fill"></div></div>
+      <span class="progress-text" id="progress-text">Starting...</span>
+    </div>
+    <div class="result-section" id="result-section">
+      <span class="result-title" id="result-title"></span>
+      <div class="stats">
+        <div class="stat"><div class="stat-value" id="stat-collections">0</div><div class="stat-label">Collections</div></div>
+        <div class="stat"><div class="stat-value" id="stat-variables">0</div><div class="stat-label">Variables</div></div>
+        <div class="stat"><div class="stat-value" id="stat-effects">0</div><div class="stat-label">Effect Styles</div></div>
+      </div>
+      <div class="warnings" id="warnings-container" style="display: none;">
+        <div class="warnings-title">Warnings:</div>
+        <ul class="warnings-list" id="warnings-list"></ul>
+      </div>
+      <p class="error-message" id="error-message" style="display: none;"></p>
+    </div>
+  </div>
+  <script>
+    const $ = id => document.getElementById(id);
+    const jsonInput = $('json-input');
+    const fileInput = $('file-input');
+    const importBtn = $('import-btn');
+    const progressSection = $('progress-section');
+    const progressBarFill = $('progress-bar-fill');
+    const progressText = $('progress-text');
+    const resultSection = $('result-section');
+    const resultTitle = $('result-title');
+    const warningsContainer = $('warnings-container');
+    const warningsList = $('warnings-list');
+    const errorMessage = $('error-message');
+
+    $('upload-btn').onclick = () => fileInput.click();
+    fileInput.onchange = () => {
+      const file = fileInput.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => { jsonInput.value = e.target?.result; updateBtn(); };
+      reader.readAsText(file);
+    };
+
+    jsonInput.oninput = updateBtn;
+    function updateBtn() { importBtn.disabled = !jsonInput.value.trim(); }
+
+    importBtn.onclick = () => {
+      const json = jsonInput.value.trim();
+      if (!json) return;
+      resultSection.classList.remove('visible', 'success', 'error');
+      progressSection.classList.add('visible');
+      progressBarFill.style.width = '0%';
+      progressText.textContent = 'Starting...';
+      importBtn.disabled = true;
+      parent.postMessage({ pluginMessage: { type: 'import', json } }, '*');
+    };
+
+    function escapeHtml(t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+
+    window.onmessage = e => {
+      const msg = e.data.pluginMessage;
+      if (!msg) return;
+      if (msg.type === 'progress') {
+        const pct = msg.total > 0 ? Math.round((msg.current / msg.total) * 100) : 0;
+        progressBarFill.style.width = pct + '%';
+        progressText.textContent = msg.stage;
+      } else if (msg.type === 'complete') {
+        progressSection.classList.remove('visible');
+        resultSection.classList.add('visible', 'success');
+        resultSection.classList.remove('error');
+        resultTitle.textContent = 'Import Complete!';
+        $('stat-collections').textContent = msg.summary.collections;
+        $('stat-variables').textContent = msg.summary.variables;
+        $('stat-effects').textContent = msg.summary.effectStyles;
+        const w = msg.summary.warnings;
+        if (w.length > 0) {
+          warningsContainer.style.display = 'block';
+          warningsList.innerHTML = w.slice(0, 10).map(x => '<li>' + escapeHtml(x) + '</li>').join('');
+          if (w.length > 10) warningsList.innerHTML += '<li>...and ' + (w.length - 10) + ' more</li>';
+        } else { warningsContainer.style.display = 'none'; }
+        document.querySelector('.stats')?.classList.remove('hidden');
+        errorMessage.style.display = 'none';
+        importBtn.disabled = false;
+      } else if (msg.type === 'error') {
+        progressSection.classList.remove('visible');
+        resultSection.classList.add('visible', 'error');
+        resultSection.classList.remove('success');
+        resultTitle.textContent = 'Import Failed';
+        document.querySelector('.stats')?.classList.add('hidden');
+        warningsContainer.style.display = 'none';
+        errorMessage.textContent = msg.message;
+        errorMessage.style.display = 'block';
+        importBtn.disabled = false;
+      }
+    };
+    updateBtn();
+  </script>
+</body>
+</html>
