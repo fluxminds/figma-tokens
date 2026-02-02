@@ -39,6 +39,34 @@ export interface ImportMessage {
   json: string;
 }
 
+export interface ExportMessage {
+  type: 'export';
+}
+
+export interface ExportCompleteMessage {
+  type: 'export-complete';
+  json: string;
+  summary: ExportSummary;
+}
+
+export interface ExportSummary {
+  variables: number;
+  effectStyles: number;
+}
+
+export type ConflictAction = 'override' | 'override-all' | 'ignore' | 'ignore-all';
+
+export interface ConflictMessage {
+  type: 'conflict';
+  name: string;
+  itemType: 'variable' | 'effect';
+}
+
+export interface ConflictResponseMessage {
+  type: 'conflict-response';
+  action: ConflictAction;
+}
+
 export interface ProgressMessage {
   type: 'progress';
   current: number;
@@ -59,6 +87,10 @@ export interface ErrorMessage {
 export interface ImportSummary {
   collections: number;
   variables: number;
+  variablesUpdated: number;
+  variablesSkipped: number;
   effectStyles: number;
+  effectStylesUpdated: number;
+  effectStylesSkipped: number;
   warnings: string[];
 }

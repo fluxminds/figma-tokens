@@ -1,10 +1,16 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
     body {
       font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       font-size: 12px;
@@ -13,12 +19,42 @@
       background-color: var(--figma-color-bg);
       padding: 16px;
     }
-    .container { display: flex; flex-direction: column; gap: 16px; height: 100%; }
-    h1 { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
-    .description { color: var(--figma-color-text-secondary); margin-bottom: 8px; }
-    .input-section { flex: 1; display: flex; flex-direction: column; gap: 8px; }
-    .input-section label { font-weight: 500; }
-    .textarea-wrapper { flex: 1; display: flex; flex-direction: column; }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      height: 100%;
+    }
+
+    h1 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .description {
+      color: var(--figma-color-text-secondary);
+      margin-bottom: 8px;
+    }
+
+    .input-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .input-section label {
+      font-weight: 500;
+    }
+
+    .textarea-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
     textarea {
       flex: 1;
       width: 100%;
@@ -33,14 +69,27 @@
       background-color: var(--figma-color-bg-secondary);
       color: var(--figma-color-text);
     }
+
     textarea:focus {
       outline: none;
       border-color: var(--figma-color-border-brand);
       box-shadow: 0 0 0 1px var(--figma-color-border-brand);
     }
-    textarea::placeholder { color: var(--figma-color-text-tertiary); }
-    .file-upload { display: flex; align-items: center; gap: 8px; }
-    .file-upload input[type="file"] { display: none; }
+
+    textarea::placeholder {
+      color: var(--figma-color-text-tertiary);
+    }
+
+    .file-upload {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .file-upload input[type="file"] {
+      display: none;
+    }
+
     .btn {
       display: inline-flex;
       align-items: center;
@@ -54,19 +103,47 @@
       cursor: pointer;
       transition: background-color 0.15s ease;
     }
+
     .btn-primary {
       background-color: var(--figma-color-bg-brand);
       color: var(--figma-color-text-onbrand);
     }
-    .btn-primary:hover:not(:disabled) { background-color: var(--figma-color-bg-brand-hover); }
-    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn-primary:hover:not(:disabled) {
+      background-color: var(--figma-color-bg-brand-hover);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
     .btn-secondary {
       background-color: var(--figma-color-bg-secondary);
       color: var(--figma-color-text);
       border: 1px solid var(--figma-color-border);
     }
-    .btn-secondary:hover:not(:disabled) { background-color: var(--figma-color-bg-tertiary); }
-    .actions { display: flex; gap: 8px; }
+
+    .btn-secondary:hover:not(:disabled) {
+      background-color: var(--figma-color-bg-tertiary);
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      justify-content: space-between;
+    }
+
+    .actions-left {
+      display: flex;
+      gap: 8px;
+    }
+
+    .actions-right {
+      display: flex;
+      gap: 8px;
+    }
+
     .progress-section {
       display: none;
       flex-direction: column;
@@ -75,20 +152,30 @@
       background-color: var(--figma-color-bg-secondary);
       border-radius: 8px;
     }
-    .progress-section.visible { display: flex; }
+
+    .progress-section.visible {
+      display: flex;
+    }
+
     .progress-bar {
       height: 4px;
       background-color: var(--figma-color-border);
       border-radius: 2px;
       overflow: hidden;
     }
+
     .progress-bar-fill {
       height: 100%;
       background-color: var(--figma-color-bg-brand);
       transition: width 0.2s ease;
       width: 0%;
     }
-    .progress-text { font-size: 11px; color: var(--figma-color-text-secondary); }
+
+    .progress-text {
+      font-size: 11px;
+      color: var(--figma-color-text-secondary);
+    }
+
     .result-section {
       display: none;
       flex-direction: column;
@@ -97,58 +184,248 @@
       background-color: var(--figma-color-bg-secondary);
       border-radius: 8px;
     }
-    .result-section.visible { display: flex; }
-    .result-section.success { border-left: 3px solid var(--figma-color-bg-success); }
-    .result-section.error { border-left: 3px solid var(--figma-color-bg-danger); }
-    .result-title { font-weight: 600; font-size: 13px; }
-    .result-section.success .result-title { color: var(--figma-color-text-success); }
-    .result-section.error .result-title { color: var(--figma-color-text-danger); }
-    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-    .stats.hidden { display: none; }
-    .stat { text-align: center; }
-    .stat-value { font-size: 24px; font-weight: 700; color: var(--figma-color-text); }
-    .stat-label { font-size: 11px; color: var(--figma-color-text-secondary); }
-    .warnings { margin-top: 8px; }
-    .warnings-title { font-size: 11px; font-weight: 500; color: var(--figma-color-text-warning); margin-bottom: 4px; }
-    .warnings-list { max-height: 100px; overflow-y: auto; font-size: 11px; color: var(--figma-color-text-secondary); }
-    .warnings-list li { margin-left: 16px; margin-bottom: 2px; }
-    .error-message { color: var(--figma-color-text-danger); font-size: 12px; }
+
+    .result-section.visible {
+      display: flex;
+    }
+
+    .result-section.success {
+      border-left: 3px solid var(--figma-color-bg-success);
+    }
+
+    .result-section.error {
+      border-left: 3px solid var(--figma-color-bg-danger);
+    }
+
+    .result-title {
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    .result-section.success .result-title {
+      color: var(--figma-color-text-success);
+    }
+
+    .result-section.error .result-title {
+      color: var(--figma-color-text-danger);
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .stats.hidden {
+      display: none;
+    }
+
+    .stat {
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--figma-color-text);
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--figma-color-text-secondary);
+    }
+
+    .warnings {
+      margin-top: 8px;
+    }
+
+    .warnings-title {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--figma-color-text-warning);
+      margin-bottom: 4px;
+    }
+
+    .warnings-list {
+      max-height: 100px;
+      overflow-y: auto;
+      font-size: 11px;
+      color: var(--figma-color-text-secondary);
+    }
+
+    .warnings-list li {
+      margin-left: 16px;
+      margin-bottom: 2px;
+    }
+
+    .error-message {
+      color: var(--figma-color-text-danger);
+      font-size: 12px;
+    }
+
+    .export-result {
+      display: none;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .export-result.visible {
+      display: flex;
+    }
+
+    .export-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .stats-row {
+      display: flex;
+      gap: 24px;
+      justify-content: center;
+    }
+
+    .stats-row .stat {
+      text-align: center;
+    }
+
+    .conflict-dialog {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+
+    .conflict-dialog.visible {
+      display: flex;
+    }
+
+    .conflict-content {
+      background: var(--figma-color-bg);
+      border-radius: 8px;
+      padding: 20px;
+      max-width: 360px;
+      width: 90%;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+    }
+
+    .conflict-title {
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+
+    .conflict-message {
+      color: var(--figma-color-text-secondary);
+      margin-bottom: 16px;
+      font-size: 12px;
+    }
+
+    .conflict-name {
+      font-family: monospace;
+      background: var(--figma-color-bg-secondary);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .conflict-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .conflict-actions-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .conflict-actions .btn {
+      flex: 1;
+    }
+
+    .btn-warning {
+      background-color: var(--figma-color-bg-warning);
+      color: var(--figma-color-text-onwarning);
+    }
+
+    .btn-warning:hover:not(:disabled) {
+      opacity: 0.9;
+    }
+
+    .sub-stats {
+      font-size: 10px;
+      color: var(--figma-color-text-tertiary);
+      margin-top: 2px;
+    }
   </style>
 </head>
+
 <body>
   <div class="container">
     <header>
-      <h1>DTCG Token Importer</h1>
-      <p class="description">Import W3C Design Tokens into Figma Variables and Effect Styles</p>
+      <h1>DTCG Token Manager</h1>
+      <p class="description">Import and Export W3C Design Tokens to and from Variables and Effect Styles</p>
     </header>
     <div class="input-section">
       <label for="json-input">Paste your tokens JSON:</label>
       <div class="textarea-wrapper">
-        <textarea id="json-input" placeholder='{"color": {"primary": {"$type": "color", "500": {"$value": "#3B82F6"}}}}'></textarea>
+        <textarea id="json-input"
+          placeholder='{"color": {"primary": {"$type": "color", "500": {"$value": "#3B82F6"}}}}'></textarea>
       </div>
       <div class="file-upload">
         <input type="file" id="file-input" accept=".json">
         <button class="btn btn-secondary" id="upload-btn">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path d="M8 1v10M8 1L4 5M8 1l4 4M2 11v2a2 2 0 002 2h8a2 2 0 002-2v-2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M8 1v10M8 1L4 5M8 1l4 4M2 11v2a2 2 0 002 2h8a2 2 0 002-2v-2" stroke="currentColor"
+              stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
           </svg>
           Upload File
         </button>
       </div>
     </div>
     <div class="actions">
-      <button class="btn btn-primary" id="import-btn" disabled>Import Tokens</button>
+      <div class="actions-left">
+        <button class="btn btn-primary" id="import-btn" disabled>Import Tokens</button>
+      </div>
+      <div class="actions-right">
+        <button class="btn btn-secondary" id="export-btn">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M8 11V1M8 11L4 7M8 11l4-4M2 13v1a1 1 0 001 1h10a1 1 0 001-1v-1" stroke="currentColor"
+              stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          Export
+        </button>
+      </div>
     </div>
     <div class="progress-section" id="progress-section">
-      <div class="progress-bar"><div class="progress-bar-fill" id="progress-bar-fill"></div></div>
+      <div class="progress-bar">
+        <div class="progress-bar-fill" id="progress-bar-fill"></div>
+      </div>
       <span class="progress-text" id="progress-text">Starting...</span>
     </div>
     <div class="result-section" id="result-section">
       <span class="result-title" id="result-title"></span>
       <div class="stats">
-        <div class="stat"><div class="stat-value" id="stat-collections">0</div><div class="stat-label">Collections</div></div>
-        <div class="stat"><div class="stat-value" id="stat-variables">0</div><div class="stat-label">Variables</div></div>
-        <div class="stat"><div class="stat-value" id="stat-effects">0</div><div class="stat-label">Effect Styles</div></div>
+        <div class="stat">
+          <div class="stat-value" id="stat-collections">0</div>
+          <div class="stat-label">Collections</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value" id="stat-variables">0</div>
+          <div class="stat-label">Variables</div>
+          <div class="sub-stats" id="stat-variables-sub"></div>
+        </div>
+        <div class="stat">
+          <div class="stat-value" id="stat-effects">0</div>
+          <div class="stat-label">Effect Styles</div>
+          <div class="sub-stats" id="stat-effects-sub"></div>
+        </div>
       </div>
       <div class="warnings" id="warnings-container" style="display: none;">
         <div class="warnings-title">Warnings:</div>
@@ -156,12 +433,50 @@
       </div>
       <p class="error-message" id="error-message" style="display: none;"></p>
     </div>
+    <div class="result-section export-result" id="export-result-section">
+      <span class="result-title" id="export-result-title"></span>
+      <div class="stats-row" id="export-stats">
+        <div class="stat">
+          <div class="stat-value" id="export-stat-variables">0</div>
+          <div class="stat-label">Variables</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value" id="export-stat-effects">0</div>
+          <div class="stat-label">Effect Styles</div>
+        </div>
+      </div>
+      <div class="export-actions">
+        <button class="btn btn-primary" id="copy-json-btn">Copy JSON</button>
+        <button class="btn btn-secondary" id="download-json-btn">Download</button>
+      </div>
+      <p class="error-message" id="export-error-message" style="display: none;"></p>
+    </div>
+  </div>
+  <div class="conflict-dialog" id="conflict-dialog">
+    <div class="conflict-content">
+      <div class="conflict-title">Conflict Detected</div>
+      <div class="conflict-message">
+        A <span id="conflict-type">variable</span> named <span class="conflict-name" id="conflict-name"></span> already
+        exists.
+      </div>
+      <div class="conflict-actions">
+        <div class="conflict-actions-row">
+          <button class="btn btn-primary" id="conflict-override">Override</button>
+          <button class="btn btn-secondary" id="conflict-ignore">Ignore</button>
+        </div>
+        <div class="conflict-actions-row">
+          <button class="btn btn-warning" id="conflict-override-all">Override All</button>
+          <button class="btn btn-secondary" id="conflict-ignore-all">Ignore All</button>
+        </div>
+      </div>
+    </div>
   </div>
   <script>
     const $ = id => document.getElementById(id);
     const jsonInput = $('json-input');
     const fileInput = $('file-input');
     const importBtn = $('import-btn');
+    const exportBtn = $('export-btn');
     const progressSection = $('progress-section');
     const progressBarFill = $('progress-bar-fill');
     const progressText = $('progress-text');
@@ -170,6 +485,22 @@
     const warningsContainer = $('warnings-container');
     const warningsList = $('warnings-list');
     const errorMessage = $('error-message');
+    const exportResultSection = $('export-result-section');
+    const exportResultTitle = $('export-result-title');
+    const exportErrorMessage = $('export-error-message');
+    const conflictDialog = $('conflict-dialog');
+    let exportedJson = '';
+
+    // Conflict dialog handlers
+    $('conflict-override').onclick = () => respondToConflict('override');
+    $('conflict-ignore').onclick = () => respondToConflict('ignore');
+    $('conflict-override-all').onclick = () => respondToConflict('override-all');
+    $('conflict-ignore-all').onclick = () => respondToConflict('ignore-all');
+
+    function respondToConflict(action) {
+      conflictDialog.classList.remove('visible');
+      parent.postMessage({ pluginMessage: { type: 'conflict-response', action } }, '*');
+    }
 
     $('upload-btn').onclick = () => fileInput.click();
     fileInput.onchange = () => {
@@ -187,11 +518,50 @@
       const json = jsonInput.value.trim();
       if (!json) return;
       resultSection.classList.remove('visible', 'success', 'error');
+      exportResultSection.classList.remove('visible', 'success', 'error');
       progressSection.classList.add('visible');
       progressBarFill.style.width = '0%';
       progressText.textContent = 'Starting...';
       importBtn.disabled = true;
+      exportBtn.disabled = true;
       parent.postMessage({ pluginMessage: { type: 'import', json } }, '*');
+    };
+
+    exportBtn.onclick = () => {
+      resultSection.classList.remove('visible', 'success', 'error');
+      exportResultSection.classList.remove('visible', 'success', 'error');
+      progressSection.classList.add('visible');
+      progressBarFill.style.width = '0%';
+      progressText.textContent = 'Exporting...';
+      importBtn.disabled = true;
+      exportBtn.disabled = true;
+      parent.postMessage({ pluginMessage: { type: 'export' } }, '*');
+    };
+
+    $('copy-json-btn').onclick = async () => {
+      if (!exportedJson) return;
+      try {
+        await navigator.clipboard.writeText(exportedJson);
+        $('copy-json-btn').textContent = 'Copied!';
+        setTimeout(() => { $('copy-json-btn').textContent = 'Copy JSON'; }, 2000);
+      } catch (e) {
+        jsonInput.value = exportedJson;
+        jsonInput.select();
+        document.execCommand('copy');
+      }
+    };
+
+    $('download-json-btn').onclick = () => {
+      if (!exportedJson) return;
+      const blob = new Blob([exportedJson], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'tokens.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     };
 
     function escapeHtml(t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
@@ -203,6 +573,10 @@
         const pct = msg.total > 0 ? Math.round((msg.current / msg.total) * 100) : 0;
         progressBarFill.style.width = pct + '%';
         progressText.textContent = msg.stage;
+      } else if (msg.type === 'conflict') {
+        $('conflict-type').textContent = msg.itemType;
+        $('conflict-name').textContent = msg.name;
+        conflictDialog.classList.add('visible');
       } else if (msg.type === 'complete') {
         progressSection.classList.remove('visible');
         resultSection.classList.add('visible', 'success');
@@ -211,6 +585,15 @@
         $('stat-collections').textContent = msg.summary.collections;
         $('stat-variables').textContent = msg.summary.variables;
         $('stat-effects').textContent = msg.summary.effectStyles;
+        // Show sub-stats for updated/skipped
+        const varSub = [];
+        if (msg.summary.variablesUpdated > 0) varSub.push(msg.summary.variablesUpdated + ' updated');
+        if (msg.summary.variablesSkipped > 0) varSub.push(msg.summary.variablesSkipped + ' skipped');
+        $('stat-variables-sub').textContent = varSub.join(', ');
+        const effectSub = [];
+        if (msg.summary.effectStylesUpdated > 0) effectSub.push(msg.summary.effectStylesUpdated + ' updated');
+        if (msg.summary.effectStylesSkipped > 0) effectSub.push(msg.summary.effectStylesSkipped + ' skipped');
+        $('stat-effects-sub').textContent = effectSub.join(', ');
         const w = msg.summary.warnings;
         if (w.length > 0) {
           warningsContainer.style.display = 'block';
@@ -220,19 +603,34 @@
         document.querySelector('.stats')?.classList.remove('hidden');
         errorMessage.style.display = 'none';
         importBtn.disabled = false;
+        exportBtn.disabled = false;
+      } else if (msg.type === 'export-complete') {
+        progressSection.classList.remove('visible');
+        exportResultSection.classList.add('visible', 'success');
+        exportResultSection.classList.remove('error');
+        exportResultTitle.textContent = 'Export Complete!';
+        $('export-stat-variables').textContent = msg.summary.variables;
+        $('export-stat-effects').textContent = msg.summary.effectStyles;
+        $('export-stats').style.display = 'flex';
+        exportErrorMessage.style.display = 'none';
+        exportedJson = msg.json;
+        importBtn.disabled = false;
+        exportBtn.disabled = false;
       } else if (msg.type === 'error') {
         progressSection.classList.remove('visible');
         resultSection.classList.add('visible', 'error');
         resultSection.classList.remove('success');
-        resultTitle.textContent = 'Import Failed';
+        resultTitle.textContent = 'Operation Failed';
         document.querySelector('.stats')?.classList.add('hidden');
         warningsContainer.style.display = 'none';
         errorMessage.textContent = msg.message;
         errorMessage.style.display = 'block';
         importBtn.disabled = false;
+        exportBtn.disabled = false;
       }
     };
     updateBtn();
   </script>
 </body>
+
 </html>

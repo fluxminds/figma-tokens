@@ -65,16 +65,27 @@
 
   // src/creators/collections.ts
   var COLLECTION_ORDER = ["Colors", "Typography", "Spacing", "Border", "Effects", "Layout"];
+  async function findExistingCollection(name) {
+    const collections = await figma.variables.getLocalVariableCollectionsAsync();
+    return collections.find((c) => c.name === name) || null;
+  }
   async function createCollections(categories, onProgress) {
     const collections = /* @__PURE__ */ new Map();
     for (const category of COLLECTION_ORDER) {
       if (!categories.has(category))
         continue;
-      onProgress == null ? void 0 : onProgress(`Creating collection: ${category}`);
-      const collection = figma.variables.createVariableCollection(category);
-      const modeId = collection.modes[0].modeId;
-      collection.renameMode(modeId, "Default");
-      collections.set(category, { collection, modeId });
+      const existingCollection = await findExistingCollection(category);
+      if (existingCollection) {
+        onProgress == null ? void 0 : onProgress(`Using existing collection: ${category}`);
+        const modeId = existingCollection.modes[0].modeId;
+        collections.set(category, { collection: existingCollection, modeId });
+      } else {
+        onProgress == null ? void 0 : onProgress(`Creating collection: ${category}`);
+        const collection = figma.variables.createVariableCollection(category);
+        const modeId = collection.modes[0].modeId;
+        collection.renameMode(modeId, "Default");
+        collections.set(category, { collection, modeId });
+      }
     }
     return collections;
   }
@@ -97,6 +108,9 @@
     const b = parseInt(color.slice(4, 6), 16) / 255;
     const a = color.length === 8 ? parseInt(color.slice(6, 8), 16) / 255 : 1;
     return { r, g, b, a };
+  }
+  function isValidHexColor(value) {
+    return /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{4}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$/.test(value);
   }
 
   // src/parsers/dimension.ts
@@ -129,6 +143,15 @@
   }
 
   // src/creators/variables.ts
+  async function findExistingVariable(name, collection) {
+    for (const varId of collection.variableIds) {
+      const variable = await figma.variables.getVariableByIdAsync(varId);
+      if (variable && variable.name === name) {
+        return variable;
+      }
+    }
+    return null;
+  }
   function getVariableType(tokenType) {
     switch (tokenType) {
       case "color":
@@ -179,10 +202,14 @@
         return null;
     }
   }
-  async function createVariables(tokens, collections, onProgress) {
+  async function createVariables(tokens, collections, onProgress, onConflict) {
     const warnings = [];
     let created = 0;
-    const createdNames = /* @__PURE__ */ new Set();
+    let updated = 0;
+    let skipped = 0;
+    const processedNames = /* @__PURE__ */ new Set();
+    let overrideAll = false;
+    let ignoreAll = false;
     for (let i = 0; i < tokens.length; i++) {
       const token = tokens[i];
       onProgress == null ? void 0 : onProgress(i + 1, tokens.length);
@@ -192,7 +219,7 @@
         continue;
       }
       const fullName = `${token.category}/${token.name}`;
-      if (createdNames.has(fullName)) {
+      if (processedNames.has(fullName)) {
         warnings.push(`Duplicate token skipped: ${token.name}`);
         continue;
       }
@@ -203,26 +230,63 @@
           warnings.push(`Could not convert value for: ${token.name}`);
           continue;
         }
-        const variable = figma.variables.createVariable(token.name, collectionInfo.collection, variableType);
-        variable.setValueForMode(collectionInfo.modeId, value);
-        createdNames.add(fullName);
-        created++;
+        const existingVariable = await findExistingVariable(token.name, collectionInfo.collection);
+        if (existingVariable) {
+          let shouldOverride = overrideAll;
+          if (!overrideAll && !ignoreAll && onConflict) {
+            const action = await onConflict(token.name, "variable");
+            if (action === "override-all") {
+              overrideAll = true;
+              shouldOverride = true;
+            } else if (action === "ignore-all") {
+              ignoreAll = true;
+            } else if (action === "override") {
+              shouldOverride = true;
+            }
+          }
+          if (ignoreAll || !shouldOverride && !overrideAll) {
+            skipped++;
+            processedNames.add(fullName);
+            continue;
+          }
+          existingVariable.setValueForMode(collectionInfo.modeId, value);
+          processedNames.add(fullName);
+          updated++;
+        } else {
+          const variable = figma.variables.createVariable(token.name, collectionInfo.collection, variableType);
+          variable.setValueForMode(collectionInfo.modeId, value);
+          processedNames.add(fullName);
+          created++;
+        }
       } catch (error) {
         warnings.push(`Failed to create ${token.name}: ${error instanceof Error ? error.message : String(error)}`);
       }
     }
-    return { created, warnings };
+    return { created, updated, skipped, warnings };
   }
 
   // src/parsers/shadow.ts
   function parseShadow(value) {
+    if (!value.color || !isValidHexColor(value.color)) {
+      return null;
+    }
     const color = parseColor(value.color);
+    if (isNaN(color.r) || isNaN(color.g) || isNaN(color.b) || isNaN(color.a)) {
+      return null;
+    }
+    const offsetX = parseDimension(value.offsetX);
+    const offsetY = parseDimension(value.offsetY);
+    const blur = parseDimension(value.blur);
+    const spread = parseDimension(value.spread);
+    if (isNaN(offsetX) || isNaN(offsetY) || isNaN(blur) || isNaN(spread)) {
+      return null;
+    }
     return {
       type: "DROP_SHADOW",
       color: { r: color.r, g: color.g, b: color.b, a: color.a },
-      offset: { x: parseDimension(value.offsetX), y: parseDimension(value.offsetY) },
-      radius: parseDimension(value.blur),
-      spread: parseDimension(value.spread),
+      offset: { x: offsetX, y: offsetY },
+      radius: blur,
+      spread,
       visible: true,
       blendMode: "NORMAL"
     };
@@ -233,43 +297,231 @@
     const obj = value;
     return "offsetX" in obj && "offsetY" in obj && "blur" in obj && "color" in obj;
   }
+  function isValidShadowValue(value) {
+    if (!value.color || !isValidHexColor(value.color)) {
+      return false;
+    }
+    return true;
+  }
 
   // src/creators/effects.ts
-  async function createEffectStyles(shadowTokens, onProgress) {
+  async function findExistingEffectStyle(name) {
+    const effectStyles = await figma.getLocalEffectStylesAsync();
+    return effectStyles.find((style) => style.name === name) || null;
+  }
+  async function createEffectStyles(shadowTokens, onProgress, onConflict) {
     const warnings = [];
     let created = 0;
-    const createdNames = /* @__PURE__ */ new Set();
+    let updated = 0;
+    let skipped = 0;
+    const processedNames = /* @__PURE__ */ new Set();
+    let overrideAll = false;
+    let ignoreAll = false;
     for (let i = 0; i < shadowTokens.length; i++) {
       const token = shadowTokens[i];
       onProgress == null ? void 0 : onProgress(i + 1, shadowTokens.length);
-      if (createdNames.has(token.name)) {
+      if (processedNames.has(token.name)) {
         warnings.push(`Duplicate shadow skipped: ${token.name}`);
         continue;
       }
       if (!isShadowValue(token.value)) {
-        warnings.push(`Invalid shadow value for: ${token.name}`);
+        warnings.push(`Invalid shadow format for: ${token.name} (not a shadow object)`);
+        continue;
+      }
+      const shadowValue = token.value;
+      if (!isValidShadowValue(shadowValue)) {
+        warnings.push(`Skipped invalid shadow: ${token.name} (invalid color or values)`);
+        processedNames.add(token.name);
         continue;
       }
       try {
-        const shadowEffect = parseShadow(token.value);
-        const effectStyle = figma.createEffectStyle();
-        effectStyle.name = token.name;
-        effectStyle.effects = [shadowEffect];
-        createdNames.add(token.name);
-        created++;
+        const shadowEffect = parseShadow(shadowValue);
+        if (!shadowEffect) {
+          warnings.push(`Could not parse shadow: ${token.name}`);
+          processedNames.add(token.name);
+          continue;
+        }
+        const existingStyle = await findExistingEffectStyle(token.name);
+        if (existingStyle) {
+          let shouldOverride = overrideAll;
+          if (!overrideAll && !ignoreAll && onConflict) {
+            const action = await onConflict(token.name, "effect");
+            if (action === "override-all") {
+              overrideAll = true;
+              shouldOverride = true;
+            } else if (action === "ignore-all") {
+              ignoreAll = true;
+            } else if (action === "override") {
+              shouldOverride = true;
+            }
+          }
+          if (ignoreAll || !shouldOverride && !overrideAll) {
+            skipped++;
+            processedNames.add(token.name);
+            continue;
+          }
+          existingStyle.effects = [shadowEffect];
+          processedNames.add(token.name);
+          updated++;
+        } else {
+          const effectStyle = figma.createEffectStyle();
+          effectStyle.name = token.name;
+          effectStyle.effects = [shadowEffect];
+          processedNames.add(token.name);
+          created++;
+        }
       } catch (error) {
         warnings.push(`Failed to create shadow ${token.name}: ${error instanceof Error ? error.message : String(error)}`);
       }
     }
-    return { created, warnings };
+    return { created, updated, skipped, warnings };
+  }
+
+  // src/exporters/json.ts
+  function rgbaToHex(r, g, b, a) {
+    const toHex = (n) => Math.round(n * 255).toString(16).padStart(2, "0");
+    const hex = `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+    return a < 1 ? hex + toHex(a) : hex;
+  }
+  function getTypeFromCategory(category) {
+    switch (category) {
+      case "Colors":
+        return "color";
+      case "Typography":
+        return "dimension";
+      case "Spacing":
+        return "dimension";
+      case "Border":
+        return "dimension";
+      case "Effects":
+        return "number";
+      case "Layout":
+        return "dimension";
+      default:
+        return "number";
+    }
+  }
+  function getCategoryFromCollectionName(name) {
+    const normalized = name.toLowerCase();
+    if (normalized.includes("color"))
+      return "Colors";
+    if (normalized.includes("typography") || normalized.includes("font"))
+      return "Typography";
+    if (normalized.includes("spacing"))
+      return "Spacing";
+    if (normalized.includes("border"))
+      return "Border";
+    if (normalized.includes("effect") || normalized.includes("shadow"))
+      return "Effects";
+    if (normalized.includes("layout") || normalized.includes("breakpoint"))
+      return "Layout";
+    return "Effects";
+  }
+  function setNestedValue(obj, path, token) {
+    let current = obj;
+    for (let i = 0; i < path.length - 1; i++) {
+      const key = path[i];
+      if (!(key in current)) {
+        current[key] = {};
+      }
+      current = current[key];
+    }
+    current[path[path.length - 1]] = token;
+  }
+  function variableValueToDTCG(value, resolvedType) {
+    var _a;
+    if (typeof value === "number") {
+      if (resolvedType === "FLOAT") {
+        return value;
+      }
+      return `${value}px`;
+    }
+    if (typeof value === "string") {
+      return value;
+    }
+    if (typeof value === "boolean") {
+      return value ? 1 : 0;
+    }
+    if (typeof value === "object" && "r" in value && "g" in value && "b" in value) {
+      const rgba = value;
+      return rgbaToHex(rgba.r, rgba.g, rgba.b, (_a = rgba.a) != null ? _a : 1);
+    }
+    return String(value);
+  }
+  function effectToDTCGShadow(effect) {
+    var _a;
+    return {
+      offsetX: `${effect.offset.x}px`,
+      offsetY: `${effect.offset.y}px`,
+      blur: `${effect.radius}px`,
+      spread: `${(_a = effect.spread) != null ? _a : 0}px`,
+      color: rgbaToHex(effect.color.r, effect.color.g, effect.color.b, effect.color.a)
+    };
+  }
+  async function exportToJSON(onProgress) {
+    const root = {};
+    let variableCount = 0;
+    let effectCount = 0;
+    onProgress == null ? void 0 : onProgress("Reading variable collections...");
+    const collections = await figma.variables.getLocalVariableCollectionsAsync();
+    for (const collection of collections) {
+      onProgress == null ? void 0 : onProgress(`Processing collection: ${collection.name}`);
+      const category = getCategoryFromCollectionName(collection.name);
+      const defaultMode = collection.modes[0];
+      for (const variableId of collection.variableIds) {
+        const variable = await figma.variables.getVariableByIdAsync(variableId);
+        if (!variable)
+          continue;
+        const value = variable.valuesByMode[defaultMode.modeId];
+        if (value === void 0)
+          continue;
+        if (typeof value === "object" && "type" in value && value.type === "VARIABLE_ALIAS") {
+          continue;
+        }
+        const path = variable.name.split("/");
+        const dtcgValue = variableValueToDTCG(value, variable.resolvedType);
+        const dtcgType = variable.resolvedType === "COLOR" ? "color" : getTypeFromCategory(category);
+        const token = {
+          $value: dtcgValue,
+          $type: dtcgType
+        };
+        if (variable.description) {
+          token.$description = variable.description;
+        }
+        setNestedValue(root, path, token);
+        variableCount++;
+      }
+    }
+    onProgress == null ? void 0 : onProgress("Reading effect styles...");
+    const effectStyles = await figma.getLocalEffectStylesAsync();
+    for (const style of effectStyles) {
+      const dropShadows = style.effects.filter(
+        (e) => e.type === "DROP_SHADOW" && e.visible
+      );
+      if (dropShadows.length === 0)
+        continue;
+      const path = style.name.split("/");
+      const shadowValue = dropShadows.length === 1 ? effectToDTCGShadow(dropShadows[0]) : dropShadows.map(effectToDTCGShadow);
+      const token = {
+        $value: shadowValue,
+        $type: "shadow"
+      };
+      if (style.description) {
+        token.$description = style.description;
+      }
+      setNestedValue(root, path, token);
+      effectCount++;
+    }
+    return { json: root, variableCount, effectCount };
   }
 
   // src/code.ts
+  var pendingConflictResolve = null;
   figma.showUI(__html__, {
     width: 480,
     height: 560,
     themeColors: true,
-    title: "DTCG Token Importer"
+    title: "DTCG Token Manager"
   });
   function sendProgress(stage, current, total) {
     figma.ui.postMessage({ type: "progress", stage, current, total });
@@ -280,6 +532,22 @@
   function sendError(message) {
     figma.ui.postMessage({ type: "error", message });
   }
+  function sendExportComplete(json, variables, effectStyles) {
+    figma.ui.postMessage({
+      type: "export-complete",
+      json,
+      summary: { variables, effectStyles }
+    });
+  }
+  function sendConflict(name, itemType) {
+    figma.ui.postMessage({ type: "conflict", name, itemType });
+  }
+  var conflictResolver = (name, itemType) => {
+    return new Promise((resolve) => {
+      pendingConflictResolve = resolve;
+      sendConflict(name, itemType);
+    });
+  };
   async function importTokens(jsonString) {
     const warnings = [];
     sendProgress("Parsing JSON...", 0, 1);
@@ -303,24 +571,40 @@
     const variableResult = await createVariables(
       variableTokens,
       collections,
-      (current, total) => sendProgress(`Creating variables... (${current}/${total})`, current, total)
+      (current, total) => sendProgress(`Creating variables... (${current}/${total})`, current, total),
+      conflictResolver
     );
     warnings.push(...variableResult.warnings);
     let effectsCreated = 0;
+    let effectsUpdated = 0;
+    let effectsSkipped = 0;
     if (shadowTokens.length > 0) {
       const effectResult = await createEffectStyles(
         shadowTokens,
-        (current, total) => sendProgress(`Creating effect styles... (${current}/${total})`, current, total)
+        (current, total) => sendProgress(`Creating effect styles... (${current}/${total})`, current, total),
+        conflictResolver
       );
       effectsCreated = effectResult.created;
+      effectsUpdated = effectResult.updated;
+      effectsSkipped = effectResult.skipped;
       warnings.push(...effectResult.warnings);
     }
     sendComplete({
       collections: collections.size,
       variables: variableResult.created,
+      variablesUpdated: variableResult.updated,
+      variablesSkipped: variableResult.skipped,
       effectStyles: effectsCreated,
+      effectStylesUpdated: effectsUpdated,
+      effectStylesSkipped: effectsSkipped,
       warnings
     });
+  }
+  async function exportTokens() {
+    sendProgress("Exporting tokens...", 0, 1);
+    const result = await exportToJSON((stage) => sendProgress(stage, 0, 1));
+    const jsonString = JSON.stringify(result.json, null, 2);
+    sendExportComplete(jsonString, result.variableCount, result.effectCount);
   }
   figma.ui.onmessage = async (msg) => {
     if (msg.type === "import") {
@@ -328,6 +612,17 @@
         await importTokens(msg.json);
       } catch (e) {
         sendError(`Import failed: ${e instanceof Error ? e.message : "Unknown error"}`);
+      }
+    } else if (msg.type === "export") {
+      try {
+        await exportTokens();
+      } catch (e) {
+        sendError(`Export failed: ${e instanceof Error ? e.message : "Unknown error"}`);
+      }
+    } else if (msg.type === "conflict-response") {
+      if (pendingConflictResolve) {
+        pendingConflictResolve(msg.action);
+        pendingConflictResolve = null;
       }
     }
   };

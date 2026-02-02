@@ -1,5 +1,5 @@
 {
-  "name": "figma-dtcg-token-importer",
+  "name": "figma-dtcg-token-manager",
   "version": "1.0.0",
   "private": true,
   "scripts": {
