@@ -521,7 +521,7 @@
     width: 480,
     height: 560,
     themeColors: true,
-    title: "DTCG Token Manager"
+    title: "DTCG Design Token Manager"
   });
   function sendProgress(stage, current, total) {
     figma.ui.postMessage({ type: "progress", stage, current, total });

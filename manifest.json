@@ -1,6 +1,6 @@
 {
-  "name": "DTCG Token Manager",
-  "id": "0000000000000000000",
+  "name": "DTCG Design Token Manager",
+  "id": "1602387835479491374",
   "api": "1.0.0",
   "main": "dist/code.js",
   "ui": "dist/ui.html",

@@ -9,7 +9,7 @@ figma.showUI(__html__, {
   width: 480,
   height: 560,
   themeColors: true,
-  title: 'DTCG Token Manager',
+  title: 'DTCG Design Token Manager',
 });
 
 function sendProgress(stage: string, current: number, total: number): void {

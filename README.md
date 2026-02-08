@@ -1,4 +1,4 @@
-# DTCG Token Manager
+# DTCG Design Token Manager
 
 A Figma plugin for importing and exporting [W3C Design Tokens Community Group (DTCG)](https://design-tokens.github.io/community-group/format/) format tokens.
 
